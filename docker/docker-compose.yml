@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  rtmp-server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.prod
+    container_name: rtmp-streaming-server
+    ports:
+      - "8000:8000"
+      - "1935:1935"
+      - "9090:9090"
+    environment:
+      - NODE_ENV=production
+      - PORT=8000
+      - RTMP_PORT=1935
+      - HOST=0.0.0.0
+      - HLS_ROOT=/var/hls
+      - LOG_LEVEL=info
+      - ENABLE_METRICS=true
+      - METRICS_PORT=9090
+      - MAX_CONCURRENT_STREAMS=10
+    env_file:
+      - ../.env.production
+    volumes:
+      - hls-data:/var/hls
+      - ../logs:/app/logs:rw
+    restart: unless-stopped
+    networks:
+      - streaming-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          cpus: '2'
+          memory: 2G
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    restart: unless-stopped
+    networks:
+      - streaming-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    restart: unless-stopped
+    networks:
+      - streaming-network
+    depends_on:
+      - prometheus
+
+networks:
+  streaming-network:
+    driver: bridge
+
+volumes:
+  hls-data:
+  prometheus-data:
+  grafana-data:

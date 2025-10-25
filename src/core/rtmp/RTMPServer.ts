@@ -97,7 +97,6 @@ export class FFmpegWorker extends EventEmitter {
 
     const args: string[] = ['-y', '-i', inputUrl];
 
-    // Build filter complex for multiple renditions
     const splits = this.profile.video.map((_, i) => `[v${i}]`).join('');
     const filterParts = this.profile.video.map((v, i) => {
       return `[v${i}]scale=w=${v.width}:h=${v.height}:force_original_aspect_ratio=decrease,setsar=1[v${i}out]`;

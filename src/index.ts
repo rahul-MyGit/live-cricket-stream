@@ -16,19 +16,16 @@ async function bootstrap(): Promise<void> {
       environment: config.env,
     });
 
-    // Ensure HLS directory exists
     if (!fs.existsSync(config.storage.hlsRoot)) {
       fs.mkdirSync(config.storage.hlsRoot, { recursive: true });
       logger.info(`Created HLS directory: ${config.storage.hlsRoot}`);
     }
 
-    // Initialize services
     const metricsService = new MetricsService();
     const healthService = new HealthService();
     const storage = new LocalStorage(config.storage.hlsRoot);
     const transcoderManager = new TranscoderManager(config.transcoding);
 
-    // Setup transcoder event handlers for metrics
     transcoderManager.on('streamStarted', (streamKey: string) => {
       const info = transcoderManager.getStreamInfo(streamKey);
       metricsService.recordStreamStart(info?.profile || 'unknown');
@@ -50,11 +47,9 @@ async function bootstrap(): Promise<void> {
       metricsService.updateActiveStreams(transcoderManager.getWorkerCount());
     });
 
-    // Start RTMP server
     const rtmpServer = new RTMPServer(config.rtmp, transcoderManager);
     await rtmpServer.start();
 
-    // Start API server
     const apiServer = createAPIServer(
       transcoderManager,
       healthService,
@@ -67,7 +62,6 @@ async function bootstrap(): Promise<void> {
       logger.info(`Metrics available at http://${config.host}:${config.metrics.port}/api/metrics`);
     });
 
-    // Setup cleanup job
     if (config.cleanup.enabled) {
       const cleanupInterval = config.cleanup.intervalHours * 60 * 60 * 1000;
       setInterval(async () => {
@@ -77,7 +71,6 @@ async function bootstrap(): Promise<void> {
       }, cleanupInterval);
     }
 
-    // Graceful shutdown
     const shutdown = async (signal: string): Promise<void> => {
       logger.info(`Received ${signal}, shutting down gracefully...`);
 
