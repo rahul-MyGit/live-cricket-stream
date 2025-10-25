@@ -58,7 +58,6 @@ export const config: Config = {
   },
   security: {
     jwtSecret: envVars.JWT_SECRET,
-    jwtExpiry: envVars.JWT_EXPIRY || '24h',
     streamSecret: envVars.STREAM_SECRET,
   },
   logging: {

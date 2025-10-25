@@ -36,7 +36,6 @@ export interface Config {
 
 export interface SecurityConfig {
     jwtSecret: string;
-    jwtExpiry: string;
     streamSecret: string;
   }
   
