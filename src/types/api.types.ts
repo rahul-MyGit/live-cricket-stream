@@ -15,3 +15,14 @@ export interface StreamListResponse {
     streams: StreamInfo[];
     total: number;
 }
+
+export interface HealthCheckResponse {
+    status: 'healthy' | 'unhealthy';
+    uptime: number;
+    version: string;
+    checks: {
+      rtmp: boolean;
+      storage: boolean;
+      transcoding: boolean;
+    };
+}
