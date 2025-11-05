@@ -30,7 +30,7 @@ export class StreamService {
   public getStats(): { activeStreams: number; maxStreams: number } {
     return {
       activeStreams: this.transcoderManager.getWorkerCount(),
-      maxStreams: this.transcoderManager['config'].maxConcurrentStreams,
+      maxStreams: this.transcoderManager.getMaxConcurrentStreams(),
     };
   }
 }

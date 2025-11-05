@@ -8,12 +8,13 @@ import { sanitizeStreamName } from '../../utils/helper';
 import { TranscodingConfig } from '../../types/config.types';
 import { StreamInfo } from '../../types/stream.types';
 import { StreamLimitError, TranscodingError } from '../../utils/error';
+import { config } from '../../config';
 
 export class TranscoderManager extends EventEmitter {
   private workers = new Map<string, FFmpegWorker>();
   private streamInfo = new Map<string, StreamInfo>();
 
-  constructor(private config: TranscodingConfig) {
+  constructor(private transcodingConfig: TranscodingConfig) {
     super();
   }
 
@@ -25,12 +26,12 @@ export class TranscoderManager extends EventEmitter {
       return;
     }
 
-    if (this.workers.size >= this.config.maxConcurrentStreams) {
-      throw new StreamLimitError(this.config.maxConcurrentStreams);
+    if (this.workers.size >= this.transcodingConfig.maxConcurrentStreams) {
+      throw new StreamLimitError(this.transcodingConfig.maxConcurrentStreams);
     }
 
-    const profile = getProfile(profileName || this.config.profiles[0]);
-    const outputDir = path.join(process.cwd(), 'hls', safeName);
+    const profile = getProfile(profileName || this.transcodingConfig.profiles[0]);
+    const outputDir = path.join(config.storage.hlsRoot, safeName);
 
     try {
       if (!fs.existsSync(outputDir)) {
@@ -41,7 +42,7 @@ export class TranscoderManager extends EventEmitter {
         streamKey,
         outputDir,
         profile,
-        this.config.ffmpegPath
+        this.transcodingConfig.ffmpegPath
       );
 
       worker.on('error', (error) => {
@@ -128,5 +129,9 @@ export class TranscoderManager extends EventEmitter {
 
   public getWorkerCount(): number {
     return this.workers.size;
+  }
+
+  public getMaxConcurrentStreams(): number {
+    return this.transcodingConfig.maxConcurrentStreams;
   }
 }
